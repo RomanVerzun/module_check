@@ -2,6 +2,25 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore    import *
 from PyQt6.QtGui     import *
 import sys
+import serial
+import time
+
+class SpinBoxWorker(QObject):
+    update_spinbox = pyqtSignal(int)
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        for i in range(256):
+            if window.connect_btn.isChecked():
+                if window.connect_port(True):
+                    break
+                self.update_spinbox.emit(i)
+                time.sleep(0.10)
+            else: 
+                print("error window connect")
+                return 1
+        print("exit!")
 
 class Window(QWidget):
     def __init__(self):
@@ -12,9 +31,26 @@ class Window(QWidget):
         self.initUI()
 
         self.connect_btn.clicked.connect(self.connect_port)
+        self.find_btn.clicked.connect(self.find_address)
 
-    def connect_port(self):
-        print(self.port_lineEdit.text())
+    def create_request(self, character, module_address, command):
+        if module_address is not None:
+            request_string = f"{character}{module_address}{command}"
+        else:
+            exit()
+        sum_ascii = sum(ord(char) for char in request_string)
+        checksum_hex = hex(sum_ascii)[-2:].upper()
+        return request_string + checksum_hex + '\r'
+
+    def find_address(self):
+        self.thread = QThread()
+        self.worker = SpinBoxWorker()
+        self.worker.moveToThread(self.thread)
+
+        self.worker.update_spinbox.connect(self.address_spinBox.setValue)
+        self.thread.started.connect(self.worker.run)
+
+        self.thread.start()
     
     def init_values(self):
         self.upper_board_lb = QLabel('Верхняя плата:')
@@ -29,6 +65,7 @@ class Window(QWidget):
 
         self.upper_board.addItems(['', 'input', 'output'])
         self.down_board.addItems (['', 'input', 'output'])
+        self.connect_btn.setCheckable(True)
 
         # Процессорная плата 
         self.board_b  = {'U': '', 'Gm': '', 'D+': '', 'D-': '', 'Gd': '', 'Prg': '', 'IB6': '' ,'IB7': '', 'IB8': '', '+U': ''}
@@ -57,16 +94,44 @@ class Window(QWidget):
 
         self.port_lineEdit   = QLineEdit('')
         self.address_spinBox = QSpinBox()
-        self.address_spinBox.setMaximum(250)
-        self.find_btn.clicked.connect(self.auto_search_port)
-    
-    def auto_search_port(self):
-        for _ in range(self.address_spinBox.maximum()):
-            self.address_spinBox.setValue(_)
-            module = 125
-            if _ == module:
-                break
+        self.address_spinBox.setMaximum(255)
 
+    def connect_port(self, state):
+        if state:
+            self.connect_btn.setText('Отключить!')
+        else:
+            self.connect_btn.setText('Соединить!')
+            #return
+
+        com_port = self.port_lineEdit.text()
+        module_address = hex(self.address_spinBox.value())[-2:].upper()
+        print(com_port)
+        baud_rate = 115200
+
+        try:
+            ser = serial.Serial(com_port, baud_rate, timeout=1)
+        except Exception as e:
+            print(f"Ошибка при открытии порта: {e}")
+        
+        if ser.is_open:
+            try:
+                command = self.create_request('-', module_address, '')
+
+                ser.write(command.encode())
+                time.sleep(0.1)
+
+                response = ser.read_all().decode()
+                print(f"Ответ от устройства: {response}")
+                if response:
+                    return response
+            except Exception as e:
+                print(e)
+            finally:
+                ser.close()
+        else:
+            print("Не удалось открыть COM порт")
+
+    
 
     def board_changed(self, text):
         tmp = self.sender()
