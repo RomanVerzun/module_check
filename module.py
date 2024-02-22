@@ -5,22 +5,6 @@ import sys
 import serial
 import time
 
-class SpinBoxWorker(QObject):
-    update_spinbox = pyqtSignal(int)
-    def __init__(self):
-        super().__init__()
-
-    def run(self):
-        for i in range(256):
-            if window.connect_btn.isChecked():
-                if window.connect_port(True):
-                    break
-                self.update_spinbox.emit(i)
-                time.sleep(0.10)
-            else: 
-                print("error window connect")
-                return 1
-        print("exit!")
 
 class Window(QWidget):
     def __init__(self):
@@ -43,15 +27,14 @@ class Window(QWidget):
         return request_string + checksum_hex + '\r'
 
     def find_address(self):
-        self.thread = QThread()
-        self.worker = SpinBoxWorker()
-        self.worker.moveToThread(self.thread)
+        for i in range(256):
+            if self.connect_port(True):
+                break
+            else:
+                self.address_spinBox.setValue(i)
+                QCoreApplication.processEvents()
+                time.sleep(0.1)
 
-        self.worker.update_spinbox.connect(self.address_spinBox.setValue)
-        self.thread.started.connect(self.worker.run)
-
-        self.thread.start()
-    
     def init_values(self):
         self.upper_board_lb = QLabel('Верхняя плата:')
         self.down_board_lb  = QLabel('Нижняя плата:')
