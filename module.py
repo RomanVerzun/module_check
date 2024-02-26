@@ -4,6 +4,7 @@ from PyQt6.QtGui     import *
 import sys
 import serial
 import time
+import ctypes
 
 
 class Window(QWidget):
@@ -48,7 +49,9 @@ class Window(QWidget):
 
         self.upper_board.addItems(['', 'input', 'output'])
         self.down_board.addItems (['', 'input', 'output'])
-        self.connect_btn.setCheckable(True)
+        self.connect_btn.setCheckable(False)
+
+        self.test_btn.setEnabled(False)
 
         # Процессорная плата 
         self.board_b  = {'U': '', 'Gm': '', 'D+': '', 'D-': '', 'Gd': '', 'Prg': '', 'IB6': '' ,'IB7': '', 'IB8': '', '+U': ''}
@@ -84,37 +87,40 @@ class Window(QWidget):
             self.connect_btn.setText('Отключить!')
         else:
             self.connect_btn.setText('Соединить!')
-            #return
 
         com_port = self.port_lineEdit.text()
         module_address = hex(self.address_spinBox.value())[-2:].upper()
-        print(com_port)
         baud_rate = 115200
 
         try:
             ser = serial.Serial(com_port, baud_rate, timeout=1)
-        except Exception as e:
-            print(f"Ошибка при открытии порта: {e}")
-        
-        if ser.is_open:
-            try:
-                command = self.create_request('-', module_address, '')
-
-                ser.write(command.encode())
-                time.sleep(0.1)
-
-                response = ser.read_all().decode()
-                print(f"Ответ от устройства: {response}")
-                if response:
-                    return response
-            except Exception as e:
-                print(e)
-            finally:
-                ser.close()
-        else:
-            print("Не удалось открыть COM порт")
-
+            if ser.is_open:
+                    command = self.create_request('-', module_address, '')
     
+                    ser.write(command.encode())
+                    time.sleep(0.3)
+    
+                    response = ser.read_all().decode()
+                    str = response.__str__()
+                    hex_num = int(str[1:-2], 16)
+                    binary = bin(hex_num)[2:-2].rjust(32, '1')
+                    if response:
+                        print(f"Ответ от устройства: {response}")
+                        print(f"Ответ от устройства: {binary}")
+                        self.test_btn.setEnabled(True)
+                        return binary
+                    else:
+                        self.test_btn.setEnabled(False)
+
+
+            ser.close()
+        except Exception as e:
+            print(e)
+            self.showDialog()
+    
+    
+    def showDialog(self):
+        QMessageBox.information(self, 'Warning', 'COM порт не удалось открыть')
 
     def board_changed(self, text):
         tmp = self.sender()
@@ -159,7 +165,6 @@ class Window(QWidget):
                 board[element].setStyleSheet('color: black; background-color: yellow')
             else:
                 board[element].setStyleSheet('color: black; background-color: gray')
-
 
             if board_is_connected == False:
                 board[element].hide()
