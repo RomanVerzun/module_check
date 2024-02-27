@@ -13,17 +13,55 @@ class Window(QWidget):
         self.create_left_panel()
         self.create_main_widget()
         self.initUI()
-
         self.timer = QTimer(self)
-        self.timer.setInterval(500)
-        self.timer.timeout.connect(self.sendRequestToDevice)
+        QCoreApplication.processEvents()
+        self.timer.setInterval(1500)
+        self.timer.timeout.connect(self.connect_port)
 
         self.connect_btn.clicked.connect(self.connect_port)
         self.find_btn.clicked.connect(self.find_address)
-    
-    def sendRequestToDevice(self):
-        print("Send")
-    
+
+
+    def display_input(self, data):
+        hex_string = data[1:]
+        binary_data = ''.join(format(int(c, 16), '04b') for c in hex_string)
+        print(binary_data)
+        self.board_a['A1'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[23]  == "0" else "#0000ff"}')
+        self.board_a['A2'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[22]  == "0" else "#0000ff"}')
+        self.board_a['A3'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[21] == "0" else "#0000ff"}')
+        self.board_a['A4'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[20] == "0" else "#0000ff"}')
+        self.board_a['A5'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[19]  == "0" else "#0000ff"}')
+        self.board_a['A6'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[18]  == "0" else "#0000ff"}')
+        self.board_a['A7'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[17]  == "0" else "#0000ff"}')
+        self.board_a['A8'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[16]  == "0" else "#0000ff"}')
+
+        self.board_b['IB6'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-6]  == "0" else "#0000ff"}')
+        self.board_b['IB7'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-7]  == "0" else "#0000ff"}')
+        self.board_b['IB8'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-8] == "0" else "#0000ff"}')
+
+        self.board_c['C1'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-1] == "0" else "#0000ff"}')
+        self.board_c['C2'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-2] == "0" else "#0000ff"}')
+        self.board_c['C3'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-3] == "0" else "#0000ff"}')
+        self.board_c['C4'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-4] == "0" else "#0000ff"}')
+        self.board_c['C5'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-5] == "0" else "#0000ff"}')
+
+        self.board_e['IE1'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[29]  == "0" else "#0000ff"}')
+        self.board_e['IE2'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[28]  == "0" else "#0000ff"}')
+        self.board_e['IE3'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[27] == "0" else "#0000ff"}')
+        self.board_e['IE4'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[26] == "0" else "#0000ff"}')
+        self.board_e['IE5'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[25]  == "0" else "#0000ff"}')
+        self.board_e['IE6'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[24]  == "0" else "#0000ff"}')
+        self.board_e['IE7'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[7]  == "0" else "#0000ff"}')
+        self.board_e['IE8'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[6]  == "0" else "#0000ff"}')
+
+        self.board_f['F1'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[15]  == "0" else "#0000ff"}')
+        self.board_f['F2'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[14]  == "0" else "#0000ff"}')
+        self.board_f['F3'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[13] == "0" else "#0000ff"}')
+        self.board_f['F4'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[12] == "0" else "#0000ff"}')
+        self.board_f['F5'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[11]  == "0" else "#0000ff"}')
+        self.board_f['F6'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[10]  == "0" else "#0000ff"}')
+        self.board_f['F7'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[9]  == "0" else "#0000ff"}')
+        self.board_f['F8'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[8]  == "0" else "#0000ff"}')
 
     def create_request(self, character, module_address, command):
         if module_address is not None:
@@ -56,12 +94,12 @@ class Window(QWidget):
 
         self.upper_board.addItems(['', 'input', 'output'])
         self.down_board.addItems (['', 'input', 'output'])
-        self.connect_btn.setCheckable(False)
+        self.connect_btn.setCheckable(True)
 
         self.test_btn.setEnabled(False)
 
         # Процессорная плата 
-        self.board_b  = {'U': '', 'Gm': '', 'D+': '', 'D-': '', 'Gd': '', 'Prg': '', 'IB6': '' ,'IB7': '', 'IB8': '', '+U': ''}
+        self.board_b  = {'U': '', 'Gm': '',  'D+': '',  'D-': '',  'Gd': '',  'Prg': '', 'IB6': '' ,'IB7': '', 'IB8': '', '+U': ''}
         self.board_e  = {'U': '', 'IE1': '', 'IE2': '', 'IE3': '', 'IE4': '', 'IE5': '', 'IE6': '', 'IE7': '', 'IE8': '', '+U': ''}
 
         # Нижняя плата модуля
@@ -89,46 +127,42 @@ class Window(QWidget):
         self.address_spinBox = QSpinBox()
         self.address_spinBox.setMaximum(255)
 
-    def connect_port(self, state):
-        if state:
-            self.connect_btn.setText('Отключить!')
-        else:
+    def connect_port(self):
+        if self.connect_btn.isChecked():
             self.connect_btn.setText('Соединить!')
+            self.test_btn.setEnabled(False)
+            return
+        else:
+            self.connect_btn.setText('Отключить!')
 
         com_port = self.port_lineEdit.text()
         module_address = hex(self.address_spinBox.value())[-2:].upper()
         com_port = 'COM4'
         module_address = '1B'
-
-
         baud_rate = 115200
 
         try:
             with serial.Serial(com_port, baud_rate, timeout=1) as ser:
                 if ser.is_open:
-                        command = self.create_request('-', module_address, '')
+                        self.command = self.create_request('-', module_address, '')
 
-                        ser.write(command.encode())
+                        ser.write(self.command.encode())
                         time.sleep(0.1)
 
                         response = ser.read_all().decode()
-                        print(response)
                         if not response:
                             self.test_btn.setEnabled(False)
                             return
                         
                         data, checksum = response[:-3], response[-3:-1]
                         if self.checksum_verification(data, checksum) == 0:
+                            self.display_input(data)
                             self.test_btn.setEnabled(True)
                             self.timer.start()
-                            QMessageBox.information(self, 'Good', 'Устройство найдено')
                         else:
-                            self.test_btn.setEnabled(False)
                             self.timer.stop()
                             QMessageBox.information(self,'Checksum', 'Ошибка контрольной суммы модуля')
                         return
-
-            ser.close()
         except Exception as e:
             QMessageBox.information(self, 'Warning', 'COM порт не удалось открыть')
     
