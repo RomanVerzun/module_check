@@ -19,6 +19,7 @@ class Window(QWidget):
         self.find_btn.clicked.connect(self.find_address)
 
     def create_request(self, character, module_address, command):
+        print(module_address)
         if module_address is not None:
             request_string = f"{character}{module_address}{command}"
         else:
@@ -90,37 +91,44 @@ class Window(QWidget):
 
         com_port = self.port_lineEdit.text()
         module_address = hex(self.address_spinBox.value())[-2:].upper()
+        com_port = 'COM4'
+        module_address = '1B'
+
+        # Временные переменные
+
         baud_rate = 115200
 
         try:
-            ser = serial.Serial(com_port, baud_rate, timeout=1)
-            if ser.is_open:
-                    command = self.create_request('-', module_address, '')
-    
-                    ser.write(command.encode())
-                    time.sleep(0.3)
-    
-                    response = ser.read_all().decode()
-                    str = response.__str__()
-                    hex_num = int(str[1:-2], 16)
-                    binary = bin(hex_num)[2:-2].rjust(32, '1')
-                    if response:
-                        print(f"Ответ от устройства: {response}")
-                        print(f"Ответ от устройства: {binary}")
-                        self.test_btn.setEnabled(True)
-                        return binary
-                    else:
-                        self.test_btn.setEnabled(False)
+            with serial.Serial(com_port, baud_rate, timeout=1) as ser:
+                if ser.is_open:
+                        command = self.create_request('-', module_address, '')
 
+                        ser.write(command.encode())
+                        time.sleep(0.1)
+
+                        response = ser.read_all().decode()
+                        if not response:
+                            self.test_btn.setEnabled(False)
+                            return
+                        
+                        data, checksum = response[:-3], response[-3:-1]
+                        if self.checksum_verification(data, checksum) == 0:
+                            self.test_btn.setEnabled(True)
+                            QMessageBox.information(self, 'Good', 'Устройство найдено')
+                        else:
+                            self.test_btn.setEnabled(False)
+                            QMessageBox.information(self,'Checksum', 'Ошибка контрольной суммы')
+                        return
 
             ser.close()
         except Exception as e:
-            print(e)
-            self.showDialog()
+            QMessageBox.information(self, 'Warning', 'COM порт не удалось открыть')
     
-    
-    def showDialog(self):
-        QMessageBox.information(self, 'Warning', 'COM порт не удалось открыть')
+    def checksum_verification(self, data, checksum):
+        total = sum(ord(char) for char in data)
+        hex_number = hex(total)[2:]
+        correct_checksum = hex_number[-2:].upper()
+        return 0 if correct_checksum == checksum else -1
 
     def board_changed(self, text):
         tmp = self.sender()
