@@ -4,7 +4,6 @@ from PyQt6.QtGui     import *
 import sys
 import serial
 import time
-import ctypes
 
 
 class Window(QWidget):
@@ -15,11 +14,18 @@ class Window(QWidget):
         self.create_main_widget()
         self.initUI()
 
+        self.timer = QTimer(self)
+        self.timer.setInterval(500)
+        self.timer.timeout.connect(self.sendRequestToDevice)
+
         self.connect_btn.clicked.connect(self.connect_port)
         self.find_btn.clicked.connect(self.find_address)
+    
+    def sendRequestToDevice(self):
+        print("Send")
+    
 
     def create_request(self, character, module_address, command):
-        print(module_address)
         if module_address is not None:
             request_string = f"{character}{module_address}{command}"
         else:
@@ -94,7 +100,6 @@ class Window(QWidget):
         com_port = 'COM4'
         module_address = '1B'
 
-        # Временные переменные
 
         baud_rate = 115200
 
@@ -107,6 +112,7 @@ class Window(QWidget):
                         time.sleep(0.1)
 
                         response = ser.read_all().decode()
+                        print(response)
                         if not response:
                             self.test_btn.setEnabled(False)
                             return
@@ -114,10 +120,12 @@ class Window(QWidget):
                         data, checksum = response[:-3], response[-3:-1]
                         if self.checksum_verification(data, checksum) == 0:
                             self.test_btn.setEnabled(True)
+                            self.timer.start()
                             QMessageBox.information(self, 'Good', 'Устройство найдено')
                         else:
                             self.test_btn.setEnabled(False)
-                            QMessageBox.information(self,'Checksum', 'Ошибка контрольной суммы')
+                            self.timer.stop()
+                            QMessageBox.information(self,'Checksum', 'Ошибка контрольной суммы модуля')
                         return
 
             ser.close()
