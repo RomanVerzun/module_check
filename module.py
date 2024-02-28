@@ -27,58 +27,62 @@ class Window(QWidget):
         binary_data = ''.join(format(int(c, 16), '04b') for c in hex_string)
         print(binary_data)
 
-        activeInput = "ff0000"
-        inactiveInput = "66ffff"
+        activeInput = "red"
+        inactiveInput = "green"
+        
+        if self.down_board.currentText() == 'input':
+            for i, pos in enumerate(['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'], start=16):
+                color = activeInput if binary_data[23 - (i - 16)] == "0" else inactiveInput
+                self.board_a[pos].setStyleSheet(f'color: "black"; background-color: {color}')
 
-        for i, pos in enumerate(['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'], start=16):
-            color = activeInput if binary_data[23 - (i - 16)] == "0" else inactiveInput
-            self.board_a[pos].setStyleSheet(f'color: "black"; background-color: {color}')
+            for i in range(8):
+                index = 15 - i 
+                pos = f'F{i + 1}'
+                color = activeInput if binary_data[index] == "0" else inactiveInput
+                self.board_f[pos].setStyleSheet(f'color: "black"; background-color: {color}')
+
+        if self.upper_board.currentText() == 'input':
+            for i in range(5):
+                index = 39 - i 
+                pos = f'C{i + 1}'
+                color = activeInput if binary_data[index] == "0" else inactiveInput
+                self.board_c[pos].setStyleSheet(f'color: "black"; background-color: {color}')
+
+            indexes_d = [0, 1, 30, 31, 5, 4, 3, 2]  
+            for i, pos in enumerate(['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8']):
+                color = activeInput if binary_data[indexes_d[i]] == "0" else inactiveInput
+                self.board_d[pos].setStyleSheet(f'color: "black"; background-color: {color}')
 
         for i, pos in enumerate(['IB8', 'IB7', 'IB6'], start=31):
             color = activeInput if binary_data[i+1] == "0" else inactiveInput
             self.board_b[pos].setStyleSheet(f'color: "black"; background-color: {color}')
-
-        for i in range(5):
-            index = 39 - i 
-            pos = f'C{i + 1}'
-            color = activeInput if binary_data[index] == "0" else inactiveInput
-            self.board_c[pos].setStyleSheet(f'color: "black"; background-color: {color}')
-
-        indexes_d = [0, 1, 30, 31, 5, 4, 3, 2]  
-        for i, pos in enumerate(['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8']):
-            color = activeInput if binary_data[indexes_d[i]] == "0" else inactiveInput
-            self.board_d[pos].setStyleSheet(f'color: "black"; background-color: {color}')
 
         indexes_e = [29, 28, 27, 26, 25, 24, 7, 6] 
         for i, pos in enumerate(['IE1', 'IE2', 'IE3', 'IE4', 'IE5', 'IE6', 'IE7', 'IE8']):
             color = activeInput if binary_data[indexes_e[i]] == "0" else inactiveInput
             self.board_e[pos].setStyleSheet(f'color: "black"; background-color: {color}')
 
-        for i in range(8):
-            index = 15 - i 
-            pos = f'F{i + 1}'
-            color = activeInput if binary_data[index] == "0" else inactiveInput
-            self.board_f[pos].setStyleSheet(f'color: "black"; background-color: {color}')
 
     def create_request(self, character, module_address, command):
-        if module_address is not None:
-            request_string = f"{character}{module_address}{command}"
-        else:
-            exit()
+        if module_address is None:
+            raise ValueError("Module address cannn be None")
+        request_string = f"{character}{module_address}{command}"
         sum_ascii = sum(ord(char) for char in request_string)
         checksum_hex = hex(sum_ascii)[-2:].upper()
         return request_string + checksum_hex + '\r'
 
     def find_address(self):
-        for i in range(256):
-            if self.connect_port(True):
-                break
-            else:
-                self.address_spinBox.setValue(i)
-                QCoreApplication.processEvents()
-                time.sleep(0.1)
+        SLEEP_DURATION = 0.2
+        for i in range(self.MAX_ADDRESSES):
+            self.address_spinBox.setValue(i)
+            QCoreApplication.processEvents()
+            if self.connect_port():
+                exit()
+            time.sleep(SLEEP_DURATION)
 
     def init_values(self):
+        self.MAX_ADDRESSES = 256
+
         self.upper_board_lb = QLabel('Верхняя плата:')
         self.down_board_lb  = QLabel('Нижняя плата:')
         self.port_lb        = QLabel('Порт:')
@@ -122,46 +126,50 @@ class Window(QWidget):
 
         self.port_lineEdit   = QLineEdit('')
         self.address_spinBox = QSpinBox()
-        self.address_spinBox.setMaximum(255)
+        self.address_spinBox.setMaximum(self.MAX_ADDRESSES)
 
     def connect_port(self):
-        if self.connect_btn.isChecked():
+        if self.connect_btn.isChecked() :
             self.connect_btn.setText('Соединить!')
             self.test_btn.setEnabled(False)
             return
         else:
             self.connect_btn.setText('Отключить!')
+            self.test_btn.setEnabled(True)
 
-        com_port = self.port_lineEdit.text()
-        module_address = hex(self.address_spinBox.value())[-2:].upper()
-        com_port = 'COM4'
-        module_address = '1B'
+        com_port = self.port_lineEdit.text() or 'COM4'
+        module_address = hex(self.address_spinBox.value())[-2:].upper() # or '1B'
         baud_rate = 115200
 
         try:
             with serial.Serial(com_port, baud_rate, timeout=1) as ser:
                 if ser.is_open:
-                        self.command = self.create_request('-', module_address, '')
-
-                        ser.write(self.command.encode())
-                        time.sleep(0.1)
-
-                        response = ser.read_all().decode()
-                        if not response:
-                            self.test_btn.setEnabled(False)
-                            return
-                        
-                        data, checksum = response[:-3], response[-3:-1]
-                        if self.checksum_verification(data, checksum) == 0:
-                            self.display_input(data)
-                            self.test_btn.setEnabled(True)
-                            self.timer.start()
-                        else:
-                            self.timer.stop()
-                            QMessageBox.information(self,'Checksum', 'Ошибка контрольной суммы модуля')
-                        return
+                    self.handle_serial_connection(ser, module_address)
         except Exception as e:
-            QMessageBox.information(self, 'Warning', 'COM порт не удалось открыть')
+            self.test_btn.setEnabled(False)
+            QMessageBox.information(self, 'Warning', f'Ошибка при открытии COM порта: {e}')
+            self.connect_btn.setChecked(False)
+    
+    def handle_serial_connection(self, ser, module_address):
+        #module_address = '1B'
+        self.command = self.create_request('-', module_address, '')
+        ser.write(self.command.encode())
+        time.sleep(0.1)
+
+        response = ser.read_all().decode()
+        if not response:
+            self.test_btn.setEnabled(False)
+            return
+        else:
+            print("response", response)
+        
+        data, checksum = response[:-3], response[-3:-1]
+        if self.checksum_verification(data, checksum) == 0:
+            self.display_input(data)
+            self.timer.start()
+        else:
+            self.timer.stop()
+            QMessageBox.information(self, 'Checksum', 'Ошибка контрольной суммы модуля')
     
     def checksum_verification(self, data, checksum):
         total = sum(ord(char) for char in data)
@@ -187,11 +195,11 @@ class Window(QWidget):
                 if text == 'input' and button_text  != 'U' and button_text != '+U':
                     board[element].setEnabled(False)
                     board[element].setText('I' + button_text)
-                    board[element].setStyleSheet('background-color: #66ffff; color: black')
+                    board[element].setStyleSheet('background-color: green; color: black')
                 elif text == 'output' and button_text != 'U' and button_text != '+U':
                     board[element].setEnabled(True)
                     board[element].setText('R' + button_text)
-                    board[element].setStyleSheet('background-color: #66ff66; color: black')
+                    board[element].setStyleSheet('background-color: #6666FF; color: black')
                 else:
                     board[element].hide()  # Скрываем кнопку, если значение не 'input' или 'output'
 
@@ -207,7 +215,7 @@ class Window(QWidget):
             text = board[element].text()
             ch = text[:1]
             if ch == 'I':
-                board[element].setStyleSheet('color: black; background-color: #66ffff')
+                board[element].setStyleSheet('color: black; background-color: green')
             elif ch == 'U' or ch == '+':
                 board[element].setStyleSheet('color: black; background-color: yellow')
             else:
