@@ -14,7 +14,6 @@ def create_dcon_command_correct(module_id, data):
 example_command_correct = create_dcon_command_correct("08", "0000")
 
 
-
 print(example_command_correct)
 with serial.Serial('COM4', 115200, timeout=1) as ser:
     if ser.is_open:
