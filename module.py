@@ -26,42 +26,39 @@ class Window(QWidget):
         hex_string = data[1:]
         binary_data = ''.join(format(int(c, 16), '04b') for c in hex_string)
         print(binary_data)
-        self.board_a['A1'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[23]  == "0" else "#0000ff"}')
-        self.board_a['A2'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[22]  == "0" else "#0000ff"}')
-        self.board_a['A3'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[21] == "0" else "#0000ff"}')
-        self.board_a['A4'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[20] == "0" else "#0000ff"}')
-        self.board_a['A5'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[19]  == "0" else "#0000ff"}')
-        self.board_a['A6'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[18]  == "0" else "#0000ff"}')
-        self.board_a['A7'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[17]  == "0" else "#0000ff"}')
-        self.board_a['A8'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[16]  == "0" else "#0000ff"}')
 
-        self.board_b['IB6'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-6]  == "0" else "#0000ff"}')
-        self.board_b['IB7'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-7]  == "0" else "#0000ff"}')
-        self.board_b['IB8'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-8] == "0" else "#0000ff"}')
+        activeInput = "ff0000"
+        inactiveInput = "66ffff"
 
-        self.board_c['C1'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-1] == "0" else "#0000ff"}')
-        self.board_c['C2'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-2] == "0" else "#0000ff"}')
-        self.board_c['C3'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-3] == "0" else "#0000ff"}')
-        self.board_c['C4'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-4] == "0" else "#0000ff"}')
-        self.board_c['C5'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[-5] == "0" else "#0000ff"}')
+        for i, pos in enumerate(['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'], start=16):
+            color = activeInput if binary_data[23 - (i - 16)] == "0" else inactiveInput
+            self.board_a[pos].setStyleSheet(f'color: "black"; background-color: {color}')
 
-        self.board_e['IE1'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[29]  == "0" else "#0000ff"}')
-        self.board_e['IE2'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[28]  == "0" else "#0000ff"}')
-        self.board_e['IE3'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[27] == "0" else "#0000ff"}')
-        self.board_e['IE4'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[26] == "0" else "#0000ff"}')
-        self.board_e['IE5'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[25]  == "0" else "#0000ff"}')
-        self.board_e['IE6'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[24]  == "0" else "#0000ff"}')
-        self.board_e['IE7'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[7]  == "0" else "#0000ff"}')
-        self.board_e['IE8'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[6]  == "0" else "#0000ff"}')
+        for i, pos in enumerate(['IB8', 'IB7', 'IB6'], start=31):
+            color = activeInput if binary_data[i+1] == "0" else inactiveInput
+            self.board_b[pos].setStyleSheet(f'color: "black"; background-color: {color}')
 
-        self.board_f['F1'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[15]  == "0" else "#0000ff"}')
-        self.board_f['F2'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[14]  == "0" else "#0000ff"}')
-        self.board_f['F3'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[13] == "0" else "#0000ff"}')
-        self.board_f['F4'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[12] == "0" else "#0000ff"}')
-        self.board_f['F5'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[11]  == "0" else "#0000ff"}')
-        self.board_f['F6'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[10]  == "0" else "#0000ff"}')
-        self.board_f['F7'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[9]  == "0" else "#0000ff"}')
-        self.board_f['F8'].setStyleSheet(f'background-color: {"#ff0000" if binary_data[8]  == "0" else "#0000ff"}')
+        for i in range(5):
+            index = 39 - i 
+            pos = f'C{i + 1}'
+            color = activeInput if binary_data[index] == "0" else inactiveInput
+            self.board_c[pos].setStyleSheet(f'color: "black"; background-color: {color}')
+
+        indexes_d = [0, 1, 30, 31, 5, 4, 3, 2]  
+        for i, pos in enumerate(['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8']):
+            color = activeInput if binary_data[indexes_d[i]] == "0" else inactiveInput
+            self.board_d[pos].setStyleSheet(f'color: "black"; background-color: {color}')
+
+        indexes_e = [29, 28, 27, 26, 25, 24, 7, 6] 
+        for i, pos in enumerate(['IE1', 'IE2', 'IE3', 'IE4', 'IE5', 'IE6', 'IE7', 'IE8']):
+            color = activeInput if binary_data[indexes_e[i]] == "0" else inactiveInput
+            self.board_e[pos].setStyleSheet(f'color: "black"; background-color: {color}')
+
+        for i in range(8):
+            index = 15 - i 
+            pos = f'F{i + 1}'
+            color = activeInput if binary_data[index] == "0" else inactiveInput
+            self.board_f[pos].setStyleSheet(f'color: "black"; background-color: {color}')
 
     def create_request(self, character, module_address, command):
         if module_address is not None:
