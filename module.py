@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore    import *
 from PyQt6.QtGui     import *
+import relays as rel
 import sys
 import serial
 import time
@@ -15,17 +16,87 @@ class Window(QWidget):
         self.initUI()
         self.timer = QTimer(self)
         QCoreApplication.processEvents()
-        self.timer.setInterval(1500)
+        self.timer.setInterval(100)
         self.timer.timeout.connect(self.connect_port)
 
-        self.connect_btn.clicked.connect(self.connect_port)
-        self.find_btn.clicked.connect(self.find_address)
+        self.state = rel.MASK_R
 
+        self.event_button()
+    
+    def relay_a1(self):
+        if self.board_a['A1'].isChecked():
+            self.state = self.state & rel.RELAY_A01
+        else:
+            self.state = ~self.state & ~rel.RELAY_A01
+
+    def relay_a2(self):
+        if self.board_a['A2'].isChecked():
+            self.state = self.state & rel.RELAY_A02
+        else:
+            self.state = self.state | rel.RELAY_A02
+
+    def relay_a3(self):
+        if self.board_a['A3'].isChecked():
+            self.state = self.state & rel.RELAY_A03
+        else:
+            self.state = self.state | ~rel.RELAY_A03
+
+    def relay_a4(self):
+        if self.board_a['A4'].isChecked():
+            self.state = self.state & rel.RELAY_A04
+        else:
+            self.state = self.state | ~rel.RELAY_A04
+
+    def relay_a5(self):
+        if self.board_a['A5'].isChecked():
+            self.state = self.state & rel.RELAY_A05
+        else:
+            self.state = self.state | ~rel.RELAY_A05
+
+    def relay_a6(self):
+        if self.board_a['A6'].isChecked():
+            self.state = self.state & rel.RELAY_A06
+        else:
+            self.state = self.state | ~rel.RELAY_A06
+
+    def relay_a7(self):
+        if self.board_a['A7'].isChecked():
+            self.state = self.state & rel.RELAY_A07
+        else:
+            self.state = self.state | ~rel.RELAY_A07
+
+    def relay_a8(self):
+        if self.board_a['A8'].isChecked():
+            self.state = self.state & rel.RELAY_A08
+        else:
+            self.state = self.state | ~rel.RELAY_A08
+
+    def test_relays(self):
+        formatted_state = "{:04X}".format(self.state)
+        module_address = "{:02X}".format(self.address_spinBox.value()).upper()
+        com_port = self.port_lineEdit.text() or 'COM4'
+        command = self.set_pins_states(module_address, formatted_state)
+        print(command)
+        with serial.Serial(com_port, 115200, timeout=1) as ser:
+            if ser.is_open:
+                ser.write(command.encode())
+                time.sleep(0.1)
+                response = ser.read_all().decode()
+
+    def set_pins_states(self, module_id, data):
+        command_string = f"+{module_id}{data}"
+        checksum = self.calculate_checksum_correct(command_string)
+        final_command = f"{command_string}{checksum}\r"
+        print(final_command)
+        return final_command.upper()  
+
+    def calculate_checksum_correct(self, command):
+        checksum = sum(ord(c) for c in command) & 0xFF  # Применяем маску 0xFF
+        return f"{checksum:02X}"
 
     def display_input(self, data):
         hex_string = data[1:]
         binary_data = ''.join(format(int(c, 16), '04b') for c in hex_string)
-        print(binary_data)
 
         activeInput = "red"
         inactiveInput = "green"
@@ -128,6 +199,7 @@ class Window(QWidget):
         self.address_spinBox = QSpinBox()
         self.address_spinBox.setMaximum(self.MAX_ADDRESSES)
 
+
     def connect_port(self):
         if self.connect_btn.isChecked() :
             self.connect_btn.setText('Соединить!')
@@ -138,7 +210,9 @@ class Window(QWidget):
             self.test_btn.setEnabled(True)
 
         com_port = self.port_lineEdit.text() or 'COM4'
-        module_address = hex(self.address_spinBox.value())[-2:].upper() # or '1B'
+        module_address = "{:02X}".format(self.address_spinBox.value()).upper()
+
+
         baud_rate = 115200
 
         try:
@@ -151,7 +225,6 @@ class Window(QWidget):
             self.connect_btn.setChecked(False)
     
     def handle_serial_connection(self, ser, module_address):
-        #module_address = '1B'
         self.command = self.create_request('-', module_address, '')
         ser.write(self.command.encode())
         time.sleep(0.1)
@@ -210,6 +283,7 @@ class Window(QWidget):
         for element in board.keys():
             board[element] = QPushButton(element)
             board[element].setEnabled(False)
+            board[element].setCheckable(True)
             board[element].setStyleSheet('color: black; background-color: white')
 
             text = board[element].text()
@@ -252,6 +326,19 @@ class Window(QWidget):
             for key in board.keys():
                 row.addWidget(board[key])
             self.main_layout.addLayout(row)
+    
+    def event_button(self):
+        self.connect_btn.clicked.connect(self.connect_port)
+        self.find_btn.clicked.connect(self.find_address)
+        self.test_btn.clicked.connect(self.test_relays)
+        self.board_a['A1'].clicked.connect(self.relay_a1)
+        self.board_a['A2'].clicked.connect(self.relay_a2)
+        self.board_a['A3'].clicked.connect(self.relay_a3)
+        self.board_a['A4'].clicked.connect(self.relay_a4)
+        self.board_a['A5'].clicked.connect(self.relay_a5)
+        self.board_a['A6'].clicked.connect(self.relay_a6)
+        self.board_a['A7'].clicked.connect(self.relay_a7)
+        self.board_a['A8'].clicked.connect(self.relay_a8)
 
 
 app = QApplication(sys.argv)
