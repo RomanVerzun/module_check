@@ -27,13 +27,13 @@ class Window(QWidget):
         if self.board_a['A1'].isChecked():
             self.state = self.state & rel.RELAY_A01
         else:
-            self.state = ~self.state & ~rel.RELAY_A01
+            self.state = self.state | ~rel.RELAY_A01
 
     def relay_a2(self):
         if self.board_a['A2'].isChecked():
             self.state = self.state & rel.RELAY_A02
         else:
-            self.state = self.state | rel.RELAY_A02
+            self.state = self.state | ~rel.RELAY_A02
 
     def relay_a3(self):
         if self.board_a['A3'].isChecked():
