@@ -1,10 +1,9 @@
-from PyQt6.QtGui import QGuiApplication
-from PyQt6.QtQml import *
+import numpy as np
+import collections
 
-import sys
 
-app = QGuiApplication(sys.argv)
-engine = QQmlApplicationEngine()
-engine.load('window.qml')
-
-sys.exit(app.exec())
+dq = collections.deque(range(10), maxlen=10)
+dq.appendleft(-50)
+print(dq)
+print(dq.rotate(3))
+print(dq)

@@ -27,49 +27,49 @@ class Window(QWidget):
         if self.board_a['A1'].isChecked():
             self.state = self.state & rel.RELAY_A01
         else:
-            self.state = self.state | ~rel.RELAY_A01
+            self.state = self.state | (~rel.RELAY_A01 & 0xFFFF)
 
     def relay_a2(self):
         if self.board_a['A2'].isChecked():
             self.state = self.state & rel.RELAY_A02
         else:
-            self.state = self.state | ~rel.RELAY_A02
+            self.state = self.state | (~rel.RELAY_A02 & 0xFFFF)
 
     def relay_a3(self):
         if self.board_a['A3'].isChecked():
             self.state = self.state & rel.RELAY_A03
         else:
-            self.state = self.state | ~rel.RELAY_A03
+            self.state = self.state | (~rel.RELAY_A03 & 0xFFFF)
 
     def relay_a4(self):
         if self.board_a['A4'].isChecked():
             self.state = self.state & rel.RELAY_A04
         else:
-            self.state = self.state | ~rel.RELAY_A04
+            self.state = self.state | (~rel.RELAY_A04 & 0xFFFF)
 
     def relay_a5(self):
         if self.board_a['A5'].isChecked():
             self.state = self.state & rel.RELAY_A05
         else:
-            self.state = self.state | ~rel.RELAY_A05
+            self.state = self.state | (~rel.RELAY_A05 & 0xFFFF)
 
     def relay_a6(self):
         if self.board_a['A6'].isChecked():
             self.state = self.state & rel.RELAY_A06
         else:
-            self.state = self.state | ~rel.RELAY_A06
+            self.state = self.state | (~rel.RELAY_A06 & 0xFFFF)
 
     def relay_a7(self):
         if self.board_a['A7'].isChecked():
             self.state = self.state & rel.RELAY_A07
         else:
-            self.state = self.state | ~rel.RELAY_A07
+            self.state = self.state | (~rel.RELAY_A07 & 0xFFFF)
 
     def relay_a8(self):
         if self.board_a['A8'].isChecked():
             self.state = self.state & rel.RELAY_A08
         else:
-            self.state = self.state | ~rel.RELAY_A08
+            self.state = self.state | (~rel.RELAY_A08 & 0xFFFF)
 
     def test_relays(self):
         formatted_state = "{:04X}".format(self.state)
@@ -234,7 +234,8 @@ class Window(QWidget):
             self.test_btn.setEnabled(False)
             return
         else:
-            print("response", response)
+            #print("response", response)
+            ...
         
         data, checksum = response[:-3], response[-3:-1]
         if self.checksum_verification(data, checksum) == 0:
